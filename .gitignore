@@ -1,0 +1,15 @@
+# Never publish live/private account state
+private/
+live-data/
+secrets/
+*.keystore
+*.jks
+*.p12
+*.pem
+*.key
+.env
+
+# User/account dumps should be reviewed and sanitized first
+*.db
+*.db-wal
+*.db-shm
