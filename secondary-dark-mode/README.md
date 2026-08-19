@@ -1,6 +1,6 @@
 # LINE Secondary Native Dark Mode
 
-> Status: **selective bytecode patch runtime-verified on Y700; cold-boot / broader regression pass still pending**
+> Status: **selective bytecode patch runtime-verified and cold-boot stable on Y700**
 >
 > Baseline: LINE `26.11.0` (`261100124`), Android Secondary / additional device, Lenovo Y700 4th Gen, 2026-08.
 
@@ -72,13 +72,15 @@ Observed with the selective static patch active and the SimpleHook dark-mode rul
 - VOOM tab: removed;
 - no crash observed.
 
-No advertisements were observed during this pass, but this is **not attributed as new evidence for the dark-mode patch**, because the Y700 was already effectively ad-free before this build.
+The Y700 was then fully rebooted with the SimpleHook dark-mode rule still disabled. After cold boot, LINE again launched normally with native dark mode intact; floating-window and split-screen rendering remained correct, VOOM remained removed, and no regression was observed in the tested paths. This rules out the earlier success being only a hot-mount / stale-process artifact.
 
-This validates the selective bytecode bypass itself on-device. A cold-boot persistence check and broader regression items such as calls / file-image paths remain separate follow-up checks.
+No advertisements were observed during these passes, but this is **not attributed as new evidence for the dark-mode patch**, because the Y700 was already effectively ad-free before this build.
+
+The selective dark-mode patch and combined Root Mount build are therefore considered a **stable baseline for the tested Y700 / LINE 26.11.0 configuration**. Broader paths such as calls and file/image handling remain ordinary regression coverage rather than blockers for the core patch result.
 
 ## Relation to other projects
 
-- **Andrew's Patches**: engineering reference for semantic fingerprints, minimal bytecode edits and fail-closed handling. The Y700 test module combines Andrew's selected LINE cleanup patches with this one-instruction Secondary dark-mode bypass.
+- **Andrew's Patches**: engineering reference for semantic fingerprints, minimal bytecode edits and fail-closed handling. The Y700 build combines Andrew's selected LINE cleanup patches with this one-instruction Secondary dark-mode bypass.
 - **Knot**: useful as a reference for respecting LINE's own runtime theme semantics. Knot adapts its injected UI to LINE's active theme; it does not remove this Secondary eligibility veto.
 
 This project does **not** recreate a dark palette, force Android WebView darkening, or globally spoof the device as Primary. LINE's own theme engine remains responsible for colors, icons and layout.
@@ -99,10 +101,10 @@ This project does **not** recreate a dark palette, force Android WebView darkeni
 | PoC-1 | SimpleHook `q28.n.b(Context) -> true` | ✅ runtime verified |
 | PoC-2 | static Morphe equivalent of PoC-1 | ✅ CI build verified; retained as research baseline |
 | Selective | replace only Secondary reject `goto` with `nop` | ✅ CI + post-build DEX + Y700 runtime verified |
-| Combined Y700 | Andrew cleanup patches + selective dark patch, Root Mount | ✅ hot-install runtime pass |
-| Stable | cold boot + broader regression pass | ⏳ pending |
+| Combined Y700 | Andrew cleanup patches + selective dark patch, Root Mount | ✅ hot-install + cold-boot verified |
+| Stable baseline | SimpleHook disabled; reboot persistence; dark/split/floating/VOOM/chat pass | ✅ verified |
 
-## Build candidate
+## Stable build
 
 The current combined Y700 module applies:
 
