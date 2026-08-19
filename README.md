@@ -12,6 +12,13 @@ LINE 在 Root 環境下的 Andrew 模塊、既有修補、去廣告與日用相�
 
 主要目標是讓 LINE 在 Root 環境下能正常日用，同時知道哪些功能是 Andrew 模塊改的、哪些是以前自己的修補、更新後又壞了什麼。
 
+### 進行時間
+
+- **主要修補／日用驗證：2026-08。**
+- Andrew `patched-apps` build、LINE 26.11.0、XML Guard、VGuard / LINE Pay 等整理都集中在這段時間。
+- GitHub 系統化整理：2026-08 起。
+- 後面只要 LINE / Andrew patch 更新，這條線就會繼續延長，不把 2026-08 當永久封箱點。
+
 ### 目前做到哪
 
 **🟢 LINE 26.11.0 目前長期日用測試中。**
@@ -135,9 +142,10 @@ exclusive-patches = true
 - `patched-apps`：Andrew 模塊 build workspace。
 - 這裡：實際日用結果、以前自己的 LINE 修補、XML Guard、VGuard / security 研究。
 
-### 待回收
+### 快速入口
 
-看 `MIGRATION_BACKLOG.md`。
+- `COMPATIBILITY.md`：目前日用相容性矩陣。
+- `MIGRATION_BACKLOG.md`：舊資料回收。
 
 ---
 
