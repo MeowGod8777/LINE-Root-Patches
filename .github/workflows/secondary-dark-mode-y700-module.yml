@@ -1,0 +1,129 @@
+name: Y700 LINE Secondary dark Root Mount
+
+on:
+  push:
+    branches: [secondary-dark-mode]
+    paths:
+      - 'secondary-dark-mode/morphe/patches/src/main/kotlin/dev/meowgod/line/secondarydark/**'
+      - '.github/workflows/secondary-dark-mode-y700-module.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: read
+
+jobs:
+  build-module:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout research patch
+        uses: actions/checkout@v4
+        with:
+          path: root-patches
+
+      - name: Checkout Andrew patches v1.6.0 source
+        uses: actions/checkout@v4
+        with:
+          repository: andrewliang25/morphe-patches
+          ref: 01824ca7983f53c79e3f88e86b5818e9f9318ab2
+          path: andrew-patches
+
+      - name: Checkout patched-apps builder baseline
+        uses: actions/checkout@v4
+        with:
+          repository: MeowGod8777/patched-apps
+          ref: a855e8ed2e66f8b330959925713feecf33efdf9f
+          path: patched-apps
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Inject selective dark-mode patch into Andrew bundle
+        run: |
+          set -euo pipefail
+          src=root-patches/secondary-dark-mode/morphe/patches/src/main/kotlin/dev/meowgod/line/secondarydark
+          dst=andrew-patches/patches/src/main/kotlin/app/andrewliang/patches/line/secondarydark
+          mkdir -p "$dst"
+
+          sed \
+            -e 's/^package dev\.meowgod\.line\.secondarydark/package app.andrewliang.patches.line.secondarydark/' \
+            "$src/Fingerprints.kt" > "$dst/Fingerprints.kt"
+
+          sed \
+            -e 's/^package dev\.meowgod\.line\.secondarydark/package app.andrewliang.patches.line.secondarydark/' \
+            -e 's/import dev\.meowgod\.line\.shared\.Constants\.COMPATIBILITY_LINE_26110/import app.andrewliang.patches.shared.Constants.COMPATIBILITY_LINE/' \
+            -e 's/COMPATIBILITY_LINE_26110/COMPATIBILITY_LINE/g' \
+            "$src/SecondaryDarkModeSelectivePatch.kt" > "$dst/SecondaryDarkModeSelectivePatch.kt"
+
+          grep -R "Unlock Secondary native dark mode" -n "$dst"
+
+      - name: Build combined Andrew + MeowGod patch bundle
+        working-directory: andrew-patches
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          ./gradlew :patches:buildAndroid --no-daemon --stacktrace
+          ls -lh patches/build/libs
+
+      - name: Seed combined bundle into patched-apps cache
+        run: |
+          set -euo pipefail
+          mpp=$(find andrew-patches/patches/build/libs -maxdepth 1 -type f -name 'patches-*.mpp' | grep -Ev '(sources|javadoc)' | head -n 1)
+          test -n "$mpp"
+          mkdir -p patched-apps/temp/andrewliang25-rv
+          cp "$mpp" patched-apps/temp/andrewliang25-rv/patches-1.6.0.mpp
+          sha256sum patched-apps/temp/andrewliang25-rv/patches-1.6.0.mpp
+
+      - name: Write Y700 module build config
+        run: |
+          cat > patched-apps/config-y700-secondary.toml <<'EOF'
+          enable-module-update = false
+          parallel-jobs = 1
+
+          [LINE-Y700-Secondary]
+          app-name = "LINE"
+          patches-source = "andrewliang25/morphe-patches"
+          patches-version = "1.6.0"
+          cli-source = "MorpheApp/morphe-cli"
+          rv-brand = "MeowGod-Andrew"
+          build-mode = "module"
+          version = "26.11.0"
+          arch = "arm64-v8a"
+          include-stock = "auto"
+          exclusive-patches = true
+          included-patches = """\
+            'Hide ad views' \
+            'Remove banner ads' \
+            'Hide Home modules' \
+            'Disable VOOM' \
+            'Hide VOOM tab' \
+            'Unlock Secondary native dark mode' \
+            """
+          archive-dlurl = "https://archive.org/download/andrews-apks/apks/jp.naver.line.android"
+          apkmirror-dlurl = "https://www.apkmirror.com/apk/line-corporation/line"
+          uptodown-dlurl = "https://line.en.uptodown.com/android"
+          EOF
+          cat patched-apps/config-y700-secondary.toml
+
+      - name: Build Root Mount module
+        working-directory: patched-apps
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          chmod +x build.sh
+          ./build.sh config-y700-secondary.toml
+          echo '===== BUILD OUTPUT ====='
+          find build -maxdepth 1 -type f -printf '%f %s bytes\n' | sort
+          sha256sum build/*
+
+      - name: Upload Y700 Root Mount module
+        uses: actions/upload-artifact@v4
+        with:
+          name: line-y700-secondary-dark-root-mount
+          path: patched-apps/build/*
+          if-no-files-found: error
