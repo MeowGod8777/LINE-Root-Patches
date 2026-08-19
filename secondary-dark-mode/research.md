@@ -58,6 +58,25 @@ The PoC forces the **whole predicate** true. That is broader than the actual int
 
 Therefore the PoC is intentionally retained as a reproducible discovery method, not presented as the clean final implementation.
 
+## Morphe PoC build checkpoint — 2026-08-19
+
+A standalone Morphe patch bundle now contains a static equivalent of the verified SimpleHook PoC. It is pinned to LINE 26.11.0 and uses the exact known symbol fingerprint (`Lq28/n;->b(Landroid/content/Context;)Z`).
+
+CI initially exposed two build-environment omissions and was fixed rather than worked around:
+
+1. missing Gradle version catalog required by the Morphe Gradle plugin;
+2. missing Kotlin `-Xcontext-parameters` compiler flag required by the current Morphe API.
+
+After those corrections, GitHub Actions run `32239248900` compiled successfully and produced:
+
+```text
+patches-0.1.0-dev.mpp
+size: 7615 bytes
+SHA-256: a63de30502ede5e50934eab3d8eb49f7a683514e8f545c6072b38c4226560e12
+```
+
+This checkpoint proves the custom patch project itself builds. It does **not** yet promote the PoC to the final selective implementation and does not count as Y700 runtime verification until the generated patch is applied and tested with SimpleHook disabled.
+
 ## Final patch design
 
 ### Goal
