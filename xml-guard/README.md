@@ -2,9 +2,11 @@
 
 歷史 module ID：`line_xml_guard_turbo_alpha`
 
-## 已回收證據
+## 現在找回了什麼
 
-2026-08-18 的 audit 有抓到已安裝 module 目錄與當時正在運作的 watcher。module 內包含：
+2026-08-18 的 audit 有抓到當時已安裝的 module 目錄和正在跑的 watcher。
+
+module 裡有：
 
 - `README.txt`
 - `action.sh`
@@ -15,20 +17,22 @@
 - `skip_mount`
 - `watch.sh`
 
-當時可見的 active process：
+當時 active process：
 
 ```text
 toybox inotifyd /data/adb/modules/line_xml_guard_turbo_alpha/watch.sh /data/user/0/jp.naver.line.android/shared_prefs wcmn
 ```
 
-module log 也有記錄開機時 patch 的事件，以及修改前／後 SHA-256。
+module log 也有開機 patch 紀錄，以及修改前／後 SHA-256。
 
-## 回收狀態
+## 還缺什麼
 
-目前證據足以確認 module 結構與 runtime 行為，但 audit **沒有包含所有腳本的完整原始 source body**。
+目前足夠確認 module 結構和大概怎麼跑，**但 audit 沒有把所有 script 的完整 source body 留下來**。
 
-在真正原始檔找回之前，不靠記憶補出替代腳本再標成 original；若之後需要重寫，必須明確標記為重新實作。
+所以原始檔沒找回前，不靠記憶補一套再寫成 original。之後如果真的重寫，就直接標成重新實作。
 
-## 隱私邊界
+## 隱私
 
-被監看的 LINE shared-preference XML 屬於使用者／帳號資料。這個 public repository **不得 commit 真實 XML、LINE 帳號識別資料、token、聊天資料庫或其他私人狀態**。未來測試資料一律使用去識別 fixture。
+這支會碰 LINE shared-preference XML，而那是帳號資料。
+
+這個 repo 是 Public，所以**不要 commit 真實 XML、LINE 帳號識別資料、token、聊天 DB 或其他私人狀態**。要放測試資料就先去識別。
