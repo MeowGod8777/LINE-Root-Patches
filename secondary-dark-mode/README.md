@@ -1,6 +1,6 @@
 # LINE Secondary Native Dark Mode
 
-> Status: **verified PoC / workaround; selective bytecode patch in progress**
+> Status: **selective bytecode patch built and bytecode-verified; Y700 runtime validation pending**
 >
 > Baseline: LINE `26.11.0` (`261100124`), Android Secondary / additional device, Lenovo Y700 4th Gen, 2026-08.
 
@@ -20,42 +20,83 @@ return: true
 
 This immediately enabled LINE's **own native dark theme** on the Secondary device. It was verified in fullscreen, split-screen and floating-window use, with Secondary-device behavior otherwise retained.
 
-## Why this is only the PoC
+## Exact 26.11.0 veto
 
-For LINE 26.11.0, `q28.n.b(Context)` is not only the Secondary check. The method also participates in other dark-mode eligibility checks. Forcing the whole method to `true` therefore proves the blocker, but bypasses more logic than necessary.
+Analysis of the actual Y700-exported LINE 26.11.0 `base.apk` resolved the relevant control flow in:
 
-The intended final patch follows the same engineering principle used by Andrew's Morphe patches:
+```text
+Lq28/n;->b(Landroid/content/Context;)Z
+```
 
-1. locate the eligibility method with a strict fingerprint;
-2. identify the **Secondary -> reject** control-flow edge;
-3. neutralize only that edge;
-4. preserve registration/init, preference and theme-asset checks;
-5. fail closed if the fingerprint/control-flow shape is no longer unique.
+The Secondary-role branch is:
 
-The result should behave as if LINE simply stopped treating `SECONDARY` as an automatic reason to reject native dark mode.
+```text
+invoke-interface {v0}, Lk40/d0;->f()Z
+move-result v0
+if-eqz v0, :continue_normal_dark_checks
+goto :reject_false
+```
+
+The final selective patch replaces **only** the last `goto :reject_false` with `nop`.
+
+That means both device-role results continue into LINE's original dark-mode checks while the following remain intact:
+
+- registration/init prerequisites;
+- `THEME_AUTO_DARK_MODE` logic;
+- native theme readiness/resource checks;
+- the actual Secondary device identity everywhere else.
+
+This is deliberately narrower than the original `q28.n.b(Context) -> true` PoC.
 
 ## Relation to other projects
 
-- **Andrew's Patches**: used as the model for semantic fingerprints, minimal bytecode edits and fail-closed version handling. Andrew currently has no equivalent Secondary-native-dark-mode patch in the published LINE patch set.
-- **Knot**: useful as a reference for respecting LINE's own runtime theme semantics. Knot's `LineTheme` adapts Knot-injected UI to LINE's active theme; it does not remove LINE's Secondary dark-mode eligibility veto.
+- **Andrew's Patches**: engineering reference for semantic fingerprints, minimal bytecode edits and fail-closed handling. The Y700 test module combines Andrew's selected LINE cleanup patches with this one-instruction Secondary dark-mode bypass.
+- **Knot**: useful as a reference for respecting LINE's own runtime theme semantics. Knot adapts its injected UI to LINE's active theme; it does not remove this Secondary eligibility veto.
 
 This project does **not** recreate a dark palette, force Android WebView darkening, or globally spoof the device as Primary. LINE's own theme engine remains responsible for colors, icons and layout.
 
 ## Safety constraints
 
-- Do **not** globally spoof `isSecondary()` / device type. Secondary state is used by unrelated LINE features.
+- Do **not** globally spoof `isSecondary()` / device type.
 - Do not force arbitrary theme files or colors.
 - Patch only the dark-mode eligibility path.
-- The current research is pinned to LINE 26.11.0 until another version is statically and functionally verified.
-- Prefer Root Mount for the final Y700 build so the original LINE signing identity is retained.
+- Current compatibility remains pinned to LINE 26.11.0 until another version is statically and functionally verified.
+- The selective patch validates the verified `INVOKE_INTERFACE -> MOVE_RESULT -> IF_EQZ -> GOTO` shape and fails closed if it changes.
+- Root Mount is used for the Y700 test build so the installed LINE package/signing identity is not replaced by a separately signed app install.
 
 ## Current stages
 
 | Stage | Method | Status |
 |---|---|---|
-| PoC-1 | SimpleHook `q28.n.b(Context) -> true` | ✅ verified daily workaround |
-| PoC-2 | static Morphe equivalent of PoC-1 | 🧪 build/test stage |
-| Final | selective Secondary-veto bypass | 🚧 in progress |
-| VOOM | Andrew `Hide VOOM tab` via Root Mount | planned for the Y700 bundle |
+| PoC-1 | SimpleHook `q28.n.b(Context) -> true` | ✅ runtime verified |
+| PoC-2 | static Morphe equivalent of PoC-1 | ✅ CI build verified; retained as research baseline |
+| Selective | replace only Secondary reject `goto` with `nop` | ✅ CI build + post-build DEX verification |
+| Combined Y700 | Andrew cleanup patches + selective dark patch, Root Mount | ✅ module produced; 🧪 device test pending |
+| Stable | SimpleHook disabled, Y700 regression pass complete | ⏳ pending |
 
-See [`research.md`](research.md) for the evidence and patch-design notes.
+## Build candidate
+
+The current combined Y700 test module applies:
+
+```text
+Disable VOOM
+Hide Home modules
+Hide VOOM tab
+Hide ad views
+Remove banner ads
+Unlock Secondary native dark mode
+```
+
+Module SHA-256:
+
+```text
+49be8afdbffc4542ae1a482af8d9ddba1e7b757c1dbeb42755d22ef4e5a3cdb5
+```
+
+It deliberately reuses the existing Andrew module ID (`line-andrew-arm64`) so it acts as a replacement/update rather than leaving two Root Mount modules competing over LINE's `base.apk`.
+
+See:
+
+- [`research.md`](research.md) — discovery history and design rationale
+- [`dex-26.11.0-y700.md`](dex-26.11.0-y700.md) — exact Y700 DEX control flow
+- [`build-verification-0.2.0.md`](build-verification-0.2.0.md) — CI, hashes and post-build bytecode verification
