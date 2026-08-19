@@ -11,3 +11,9 @@ patches {
         license = "Research / repository terms"
     }
 }
+
+kotlin {
+    compilerOptions {
+        freeCompilerArgs.add("-Xcontext-parameters")
+    }
+}
