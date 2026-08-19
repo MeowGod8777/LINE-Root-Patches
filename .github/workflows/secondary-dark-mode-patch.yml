@@ -1,0 +1,49 @@
+name: Secondary dark mode patch
+
+on:
+  push:
+    branches: [secondary-dark-mode]
+    paths:
+      - 'secondary-dark-mode/**'
+      - '.github/workflows/secondary-dark-mode-patch.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: secondary-dark-mode/morphe
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '9.6.1'
+
+      - name: Compile patch bundle
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gradle :patches:buildAndroid --no-daemon --stacktrace
+
+      - name: Show outputs
+        run: find patches/build/libs -maxdepth 1 -type f -printf '%f\n' | sort
+
+      - name: Upload Morphe patch bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: line-secondary-dark-mode-patches
+          path: secondary-dark-mode/morphe/patches/build/libs/*.mpp
+          if-no-files-found: error
