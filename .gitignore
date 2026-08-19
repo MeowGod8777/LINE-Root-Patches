@@ -1,7 +1,9 @@
 # Never publish live/private account state
 private/
 live-data/
+private-logs/
 secrets/
+shared_prefs/
 *.keystore
 *.jks
 *.p12
@@ -13,3 +15,11 @@ secrets/
 *.db
 *.db-wal
 *.db-shm
+*.sqlite
+*.sqlite3
+*.sqlite-wal
+*.sqlite-shm
+
+# Keep raw device/app dumps out of the public tree unless explicitly sanitized
+raw-dumps/
+unsanitized/
