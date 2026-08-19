@@ -1,6 +1,6 @@
 # LINE Secondary Native Dark Mode
 
-> Status: **selective bytecode patch built and bytecode-verified; Y700 runtime validation pending**
+> Status: **selective bytecode patch runtime-verified on Y700; cold-boot / broader regression pass still pending**
 >
 > Baseline: LINE `26.11.0` (`261100124`), Android Secondary / additional device, Lenovo Y700 4th Gen, 2026-08.
 
@@ -48,6 +48,34 @@ That means both device-role results continue into LINE's original dark-mode chec
 
 This is deliberately narrower than the original `q28.n.b(Context) -> true` PoC.
 
+## Runtime validation — 2026-08-19
+
+The combined Root Mount module was hot-installed on the Y700. First, LINE was opened with the original SimpleHook workaround still enabled to verify that the new mounted build itself launched normally. The app opened normally and chat remained functional with no crash.
+
+The SimpleHook rule was then disabled:
+
+```text
+q28.n
+b(android.content.Context)
+return true
+```
+
+After force-stopping and reopening LINE, the native dark theme **remained active without the runtime hook**.
+
+Observed with the selective static patch active and the SimpleHook dark-mode rule disabled:
+
+- native dark mode: OK;
+- floating window: OK;
+- split screen: OK;
+- chat: OK;
+- app launch: OK;
+- VOOM tab: removed;
+- no crash observed.
+
+No advertisements were observed during this pass, but this is **not attributed as new evidence for the dark-mode patch**, because the Y700 was already effectively ad-free before this build.
+
+This validates the selective bytecode bypass itself on-device. A cold-boot persistence check and broader regression items such as calls / file-image paths remain separate follow-up checks.
+
 ## Relation to other projects
 
 - **Andrew's Patches**: engineering reference for semantic fingerprints, minimal bytecode edits and fail-closed handling. The Y700 test module combines Andrew's selected LINE cleanup patches with this one-instruction Secondary dark-mode bypass.
@@ -62,7 +90,7 @@ This project does **not** recreate a dark palette, force Android WebView darkeni
 - Patch only the dark-mode eligibility path.
 - Current compatibility remains pinned to LINE 26.11.0 until another version is statically and functionally verified.
 - The selective patch validates the verified `INVOKE_INTERFACE -> MOVE_RESULT -> IF_EQZ -> GOTO` shape and fails closed if it changes.
-- Root Mount is used for the Y700 test build so the installed LINE package/signing identity is not replaced by a separately signed app install.
+- Root Mount is used for the Y700 build so the installed LINE package/signing identity is not replaced by a separately signed app install.
 
 ## Current stages
 
@@ -70,13 +98,13 @@ This project does **not** recreate a dark palette, force Android WebView darkeni
 |---|---|---|
 | PoC-1 | SimpleHook `q28.n.b(Context) -> true` | ✅ runtime verified |
 | PoC-2 | static Morphe equivalent of PoC-1 | ✅ CI build verified; retained as research baseline |
-| Selective | replace only Secondary reject `goto` with `nop` | ✅ CI build + post-build DEX verification |
-| Combined Y700 | Andrew cleanup patches + selective dark patch, Root Mount | ✅ module produced; 🧪 device test pending |
-| Stable | SimpleHook disabled, Y700 regression pass complete | ⏳ pending |
+| Selective | replace only Secondary reject `goto` with `nop` | ✅ CI + post-build DEX + Y700 runtime verified |
+| Combined Y700 | Andrew cleanup patches + selective dark patch, Root Mount | ✅ hot-install runtime pass |
+| Stable | cold boot + broader regression pass | ⏳ pending |
 
 ## Build candidate
 
-The current combined Y700 test module applies:
+The current combined Y700 module applies:
 
 ```text
 Disable VOOM
