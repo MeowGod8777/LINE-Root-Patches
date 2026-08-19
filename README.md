@@ -1,12 +1,12 @@
-# LINE Root 修補與相容性研究
+# LINE Root 修補與相容性
 
-這個 repository 集中保存所有 LINE 專屬的 Root、patch、相容性與行為差異研究。
+這裡集中放 LINE 相關的 Root、patch、相容性和實際行為差異。LINE 的東西就盡量不要再散到其他 repo。
 
 ## LINE XML Guard
 
 歷史 module ID：`line_xml_guard_turbo_alpha`
 
-已知 module 檔案：
+當時 module 裡有：
 
 - `README.txt`
 - `action.sh`
@@ -17,67 +17,72 @@
 - `skip_mount`
 - `watch.sh`
 
-已驗證到的行為：
+目前能確認的行為：
 
-- 開機時 patch 指定的 LINE shared preference 狀態。
-- 修改前後記錄 SHA-256。
-- 使用 `/system/bin/toybox inotifyd` 監看 `/data/user/0/jp.naver.line.android/shared_prefs`。
-- 偵測到相關檔案變化後，可觸發重新套用。
+- 開機時會 patch 指定的 LINE shared preference 狀態。
+- 修改前後有記 SHA-256。
+- 用 `/system/bin/toybox inotifyd` 監看 `/data/user/0/jp.naver.line.android/shared_prefs`。
+- 相關檔案變動後可以重新套用。
 
-### 隱私規則
+完整 script source 還沒全部找回來，細節看 `xml-guard/`。
 
-**不得上傳真實 LINE preference XML、帳號識別資料、token、cookie、聊天資料庫或其他私人帳號狀態。**
+### Public repo 要注意
 
-GitHub 只保存通用 patch 邏輯、去識別的測試 fixture 與說明文件。此 repository 目前為 Public，因此任何 log、截圖、XML 或資料庫片段在 commit 前都必須先人工確認已去識別。
+這個 repo 是 Public。
 
-## LINE 去廣告／精簡 patch
+**真實 LINE preference XML、帳號資料、token、cookie、聊天 DB 之類不要丟上來。** log、截圖、XML、DB 片段在 commit 前先看過有沒有個資。
 
-### 目前 `patched-apps` fork 的實際 build 設定
+## LINE 去廣告／精簡
 
-目前 `MeowGod8777/patched-apps` 的 `config.toml` 為固定且可核對的設定：
+### 現在 `patched-apps` 實際 build 的內容
 
-- LINE version：`26.11.0`
+目前 `MeowGod8777/patched-apps/config.toml` 是：
+
+- LINE：`26.11.0`
 - arch：`arm64-v8a`
 - build mode：`module`
 - `exclusive-patches = true`
-- 目前只包含：
+- 實際只開：
   - `Hide ad views`
   - `Remove banner ads`
   - `Hide Home modules`
   - `Disable VOOM`
   - `Hide VOOM tab`
 
-因此目前 fork 的 build 目標是**去廣告、清理 Home 模組與停用／隱藏 VOOM**。過去實測中 Smart Channel / Home 雜項也有被清掉的結果，但目前 config 並沒有一個獨立名為 Smart Channel 的 patch；這項效果應視為實測觀察，後續版本仍要重新確認。
+所以現在這套主要就是**去廣告、清 Home、關／藏 VOOM**。
 
-### 不應誤認為目前 build 已啟用的 Andrew 其他功能
+過去實測 Smart Channel / Home 雜項也有一起消失，但 config 裡沒有一個獨立叫 Smart Channel 的 patch，所以這項先當實測結果，不當永久保證。
 
-Andrew patch set 還可能提供或曾討論過其他行為，例如：
+### Andrew 其他 patch 不等於現在有開
 
-- 移除 Wallet / LINE TODAY tab。
-- keep chats unread / 改變已讀／seen 行為。
-- 收回訊息在本機保留。
-- 外部連結改走瀏覽器。
-- 其他行事曆、社群、附加工具相關精簡。
+Andrew patch set 還有其他功能，例如：
 
-**這些目前不在上述 `exclusive-patches` 清單內，因此不得寫成目前 `MeowGod8777/patched-apps` build 的既定行為。** 如果未來把它們加入 config，再另外記錄版本、副作用與實測結果。
+- Wallet / LINE TODAY tab
+- keep chats unread / 已讀行為
+- 收回訊息本機保留
+- 外部連結走瀏覽器
+- 行事曆、社群、其他附加工具精簡
 
-其中**社群功能屬於重要功能**；若未來某套 patch 會移除或破壞社群，必須在使用前明確標示。
+**這些目前不在上面的 `exclusive-patches` 清單裡，所以不要把它們寫成現在這個 build 已經有。** 之後真的加進 config，再分版本記結果。
 
-### 版本邊界
+社群功能我會另外注意；哪版會動到社群，要在使用前直接標出來。
 
-目前 fork 明確鎖在 LINE `26.11.0`，而 repository 尚未完成「LINE 版本 × patch 版本 × Root stack」的完整相容性矩陣。因此上述結果只能視為**目前版本與已整理測試狀態**，不能直接外推到所有新版本。LINE、patch bundle 或遠端配置更新後都要重新驗證。
+### 版本問題
+
+現在明確鎖 LINE `26.11.0`。LINE、patch bundle 或遠端配置一更新，都要重新測。舊結果不要直接套到新版本。
 
 ## Root / Security Detection
 
-LINE 的 Root／安全性警告要獨立記錄 LINE 版本、Root stack 與實際提示內容。銀行 App 可以正常使用，**不代表 LINE 一定會接受同一套 Root 環境**。
+LINE 的安全警告獨立看 LINE 版本和 Root stack。
 
-## 與 `patched-apps` 的關係
+銀行 App 正常 ≠ LINE 一定正常。這兩個不要混著判斷。
 
-`patched-apps` 保留作為 Andrew 衍生的 build / patch 工作區；這個 repository 則保存整理過的 LINE 專屬知識、驗證結果與可維護的 source，不把整份 upstream-derived 專案複製一遍。
+## 跟 `patched-apps` 怎麼分
 
-## 語言規則
+- `patched-apps`：拿來 build Andrew 的 patch。
+- 這裡：放 LINE 實測結果、XML Guard、Root 相容性和版本差異。
 
-README、patch 行為說明、相容性結論與風險提示以繁體中文為主；module ID、指令、檔名、package、shared-preference 路徑與其他技術字串維持原文。
+說明用繁中；module ID、指令、檔名、package、shared-preference 路徑等保留原文。
 
 ---
 
