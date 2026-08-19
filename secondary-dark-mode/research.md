@@ -163,11 +163,22 @@ This is the key runtime result: the native dark theme survives after the origina
 
 No advertisements were seen during the same pass. This is recorded only as an observation, **not as causal evidence for this build**, because the Y700 had already shown an effectively ad-free state before the selective-dark-mode test.
 
-Remaining validation before calling the bundle fully stable:
+## Cold-boot validation — 2026-08-19
 
-- cold reboot and retest to rule out any hot-mount-only state;
-- broader paths such as image/file handling and calls;
-- confirm the device continues to behave as a normal Secondary device over continued use.
+The Y700 was then fully rebooted with the SimpleHook dark-mode rule still disabled. After boot, LINE again launched normally and the tested behavior remained unchanged:
+
+```text
+Native dark mode     OK
+Floating window      OK
+Split screen         OK
+VOOM tab             removed
+Chat / launch        OK
+Crash                none observed
+```
+
+This excludes a hot-mount-only or stale-process explanation for the successful first pass. The selective Root Mount implementation is therefore promoted to the **stable baseline for the tested Y700 / LINE 26.11.0 configuration**.
+
+Broader image/file/call use remains useful regression coverage, but it is no longer treated as a blocker for the core dark-mode conclusion because the selective edit touches only the verified Secondary reject edge and has survived both process restart and full device reboot.
 
 ## Andrew / Knot comparison
 
@@ -189,16 +200,14 @@ Private/unindexed implementations may exist.
 
 ## Regression checklist
 
-Before promoting the combined Y700 build to stable:
-
-1. LINE launches normally as a Secondary device. — ✅ hot-install pass
-2. Dark mode follows the intended system/LINE preference behavior. — ✅ native dark rendering confirmed after SimpleHook disabled; preference-edge cases still worth observing
-3. Fullscreen UI is correct. — ✅ previously verified with the PoC; selective build ordinary UI OK
-4. Split-screen UI is correct. — ✅ selective build verified
-5. Floating-window UI is correct. — ✅ selective build verified
-6. Chat list and chat room are correct. — ✅ selective build verified
-7. Images/files/calls continue to work. — ⏳ broader regression pending
-8. Device remains registered/treated as Secondary. — ✅ no immediate role break observed; continued-use check pending
+1. LINE launches normally as a Secondary device. — ✅ verified before and after reboot
+2. Dark mode remains active without the SimpleHook return-true rule. — ✅ verified
+3. Fullscreen UI is correct. — ✅ verified
+4. Split-screen UI is correct. — ✅ verified before and after reboot
+5. Floating-window UI is correct. — ✅ verified before and after reboot
+6. Chat list and chat room are correct. — ✅ verified
+7. Images/files/calls continue to work. — ◻ ordinary follow-up regression coverage
+8. Device remains registered/treated as Secondary. — ✅ no role break observed through tested reboot cycle
 9. VOOM patch does not affect the dark-mode result. — ✅ both work together
 10. SimpleHook `q28.n.b -> true` can be disabled without losing dark mode. — ✅ verified
-11. Cold reboot preserves the same result. — ⏳ pending
+11. Cold reboot preserves the same result. — ✅ verified
