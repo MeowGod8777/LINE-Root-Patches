@@ -6,6 +6,11 @@ on:
     paths:
       - 'secondary-dark-mode/morphe/patches/src/main/kotlin/dev/meowgod/line/secondarydark/**'
       - '.github/workflows/secondary-dark-mode-y700-module.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'secondary-dark-mode/morphe/patches/src/main/kotlin/dev/meowgod/line/secondarydark/**'
+      - '.github/workflows/secondary-dark-mode-y700-module.yml'
   workflow_dispatch:
 
 permissions:
