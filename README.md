@@ -32,27 +32,40 @@ GitHub 只保存通用 patch 邏輯、去識別的測試 fixture 與說明文件
 
 ## LINE 去廣告／精簡 patch
 
-目前整理到的 patch 測試曾達到：
+### 目前 `patched-apps` fork 的實際 build 設定
 
-- 去除廣告。
-- Smart Channel 依目標移除／停用。
-- 移除首頁雜項內容。
-- 移除 VOOM。
+目前 `MeowGod8777/patched-apps` 的 `config.toml` 為固定且可核對的設定：
 
-每一版 patch 都必須另外記錄可能的副作用：
+- LINE version：`26.11.0`
+- arch：`arm64-v8a`
+- build mode：`module`
+- `exclusive-patches = true`
+- 目前只包含：
+  - `Hide ad views`
+  - `Remove banner ads`
+  - `Hide Home modules`
+  - `Disable VOOM`
+  - `Hide VOOM tab`
 
-- Wallet tab 可能消失。
-- LINE Pay 的 App 內流程可能改成外部開啟。
-- 已讀／seen 行為可能與原版不同。
-- 收回訊息可能仍保留在本機。
-- 行事曆、社群與其他附加工具可能被精簡。
-- 外部連結可能改走瀏覽器。
+因此目前 fork 的 build 目標是**去廣告、清理 Home 模組與停用／隱藏 VOOM**。過去實測中 Smart Channel / Home 雜項也有被清掉的結果，但目前 config 並沒有一個獨立名為 Smart Channel 的 patch；這項效果應視為實測觀察，後續版本仍要重新確認。
 
-其中**社群功能屬於重要功能**；若某套 patch 會移除或破壞社群，必須在使用前明確標示。
+### 不應誤認為目前 build 已啟用的 Andrew 其他功能
+
+Andrew patch set 還可能提供或曾討論過其他行為，例如：
+
+- 移除 Wallet / LINE TODAY tab。
+- keep chats unread / 改變已讀／seen 行為。
+- 收回訊息在本機保留。
+- 外部連結改走瀏覽器。
+- 其他行事曆、社群、附加工具相關精簡。
+
+**這些目前不在上述 `exclusive-patches` 清單內，因此不得寫成目前 `MeowGod8777/patched-apps` build 的既定行為。** 如果未來把它們加入 config，再另外記錄版本、副作用與實測結果。
+
+其中**社群功能屬於重要功能**；若未來某套 patch 會移除或破壞社群，必須在使用前明確標示。
 
 ### 版本邊界
 
-目前 repository 尚未完成「LINE 版本 × patch 版本 × Root stack」的完整相容性矩陣。因此上述行為只能視為**已整理到的特定測試結果**，不能直接外推到所有新版本。LINE、patch bundle 或遠端配置更新後都要重新驗證。
+目前 fork 明確鎖在 LINE `26.11.0`，而 repository 尚未完成「LINE 版本 × patch 版本 × Root stack」的完整相容性矩陣。因此上述結果只能視為**目前版本與已整理測試狀態**，不能直接外推到所有新版本。LINE、patch bundle 或遠端配置更新後都要重新驗證。
 
 ## Root / Security Detection
 
