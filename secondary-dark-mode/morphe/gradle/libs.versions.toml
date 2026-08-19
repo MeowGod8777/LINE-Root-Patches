@@ -1,0 +1,4 @@
+[versions]
+morphe-patcher = "1.7.0"
+# Keep aligned with the current Andrew/Morphe LINE patch baseline.
+smali = "d92701d947"
