@@ -82,14 +82,28 @@ LINE PayLaunchActivity
 
 `AndrewLinePay` 的 `Log.i` 在目前環境沒有留下輸出，後續不把這個 tag 當成唯一 runtime success criterion。
 
-### 4. 目前缺口：Wallet 首頁與好友轉帳
+### 4. Wallet 首頁與好友轉帳：先維持現況
 
-目前使用需求：
+可選需求：
 
 1. `Wallet → LINE Pay`：直接開獨立 LINE Pay App。
-2. `聊天室 → 轉帳`：仍能執行真正好友轉帳，最好保留聊天對象。
+2. `聊天室 → 轉帳`：直接進獨立 LINE Pay 好友轉帳，最好保留聊天對象。
 
-實機點 Wallet / 聊天室轉帳時，沒有走到上面的 `PayLaunchActivity` / `PayLiffActivity` merchant redirect 鏈，因此 Andrew 現有 merchant redirect 不等於完整替代所有 LINE Pay 功能。
+目前判定這兩項都屬於**便利性補強，不是付款核心 blocker**：
+
+- merchant checkout 已可 redirect 到 standalone LINE Pay。
+- standalone LINE Pay 本身可正常啟動與使用。
+- Wallet / P2P 若繼續做，需要額外定位 click handler / server-config transfer route，尤其好友對象傳遞可能要更多 A/B。
+
+2026-08-20 決策：**先不繼續修 Wallet / P2P convenience routing，避免為非核心功能再引入多輪 build / 上機測試。**
+
+目前狀態改記為：
+
+```text
+Merchant payment        ✅ 已證實可 redirect
+Wallet → standalone     ⏸️ optional / deferred
+P2P friend transfer     ⏸️ deferred
+```
 
 ## Standalone LINE Pay APK 靜態分析
 
@@ -176,21 +190,23 @@ epiTransferSendMoney
 
 > 好友轉帳不是 APK 中明顯公開的固定 `upay://sendmoney` deep link，而是由 server config 提供 `epiTransferSendMoney` 對應 URL。
 
-因此下一步先離線追 `Link.type` / dispatcher；若 APK 本身不能還原實際 URL，再只讀取實機目前 LINE Pay 的 server configuration，而不是亂猜 route。
+這條研究先保留 checkpoint，不再為目前日用需求繼續上機追 route。
 
-## 設計方向
+## 若之後重啟這條線
 
 ### Wallet
 
-Wallet → LINE Pay 首頁可以做成明確 standalone launch；這條不需要偽造付款 reserveId。
+Wallet → LINE Pay 首頁可以做成明確 standalone launch；優先離線定位 Wallet click handler，找到明確入口才 build。
 
 ### 聊天室好友轉帳
 
 優先順序：
 
 1. 找到官方 standalone app 現行 `epiTransferSendMoney` route，若能帶 recipient 則完整轉譯。
-2. 若只能進好友轉帳首頁，至少直接落在 standalone 的 transfer UI。
-3. 若 standalone 根本沒有可外部帶 recipient 的 route，再記錄限制，不用 merchant `pay/payment/<reserveId>` 硬套。
+2. 若只能進好友轉帳首頁，至少直接落在 standalone transfer UI。
+3. 若 standalone 根本沒有可外部帶 recipient 的 route，記錄限制，不用 merchant `pay/payment/<reserveId>` 硬套。
+
+停損原則：找不到明確 handler / route 就不做猜測式 build，不用多輪「裝一版再試」。
 
 ## 判讀規則
 
@@ -199,4 +215,4 @@ Wallet → LINE Pay 首頁可以做成明確 standalone launch；這條不需要
 - 不因 ColorOS 沒有「關聯啟動」UI 就把問題歸因系統限制；以 resolver / runtime transition 為準。
 - 不上傳真實 payment reserveId、好友識別資訊、token、cookie 或私人 DB。
 
-> 此文件只記去識別後的技術 checkpoint；實際 patch 完成前，Wallet/P2P 狀態維持「研究中」。
+> 此文件只記去識別後的技術 checkpoint；Wallet / P2P 目前是 deliberate defer，不列為 blocker。
