@@ -31,7 +31,7 @@ LINE child namespace = stock
 
 ## 自訂 v3 shim
 
-目前 shim：
+v3：
 
 ```text
 id=rvmm-zygisk-mount
@@ -89,7 +89,7 @@ LINE MOUNT   = none
 
 所以目前不是 APK install path 改掉造成。
 
-### upstream v10 native code 的高風險 defect candidate
+### upstream v10 native code defect
 
 對照 upstream commit `02bb8adf9735e8f9ca06c1babe8e9fe853ed6c7b` 的 `zygisk/jni/module.cpp`，`receiveProcInfo()`：
 
@@ -98,7 +98,7 @@ LINE MOUNT   = none
 3. 函式在 return 前直接 `free(procs_map)`。
 4. `companionHandler()` 隨後才 fork child，並把已失效的 `src` / `dst` 傳給 `injectMount()`。
 
-也就是存在典型 **use-after-free / dangling pointer**：
+即：
 
 ```text
 getMountSrcDst(procs_map, ..., &src, &dst)
@@ -109,28 +109,76 @@ fork()
 injectMount(src, dst, pid)
 ```
 
-這可以合理解釋「有時剛好 mount 成功、有時同一 map / 同一路徑卻沒有 mount」的間歇性行為。
+這是典型 use-after-free / dangling pointer，能解釋同一 `procs_map` / 同一路徑下的間歇性成功與失敗。
 
-目前狀態：
+## v4：arm64 success-path UAF fix
 
-> 高信心 code-level root-cause candidate，尚未用修正後 native binary 做 A/B 實機驗證，因此還不標成最終定案。
-
-## 下一版修正方向
-
-v4 不再只改 shell；要修 native lifetime：
-
-- 在 `free(procs_map)` 前複製 `src` / `dst` 成獨立 owned buffers；或
-- 把 `procs_map` lifetime 延長到 `injectMount()` 完成之後。
-
-另外增加 success / failure breadcrumb，讓每次 LINE specialization 都能判斷：
+v4 不改 Zygisk Next、Andrew payload、DenyList 或任何 LINE private data，只修 LINE 命中成功路徑的 native lifetime。
 
 ```text
-matched target
-setns success/fail
-mount success/fail
+id=rvmm-zygisk-mount
+version=v10-line-andrew-4
+versionCode=1004
 ```
 
-上機前先離線重建並檢查 `.so`，避免再用 upstream v10 原 binary 做 persistence 結論。
+v4 ZIP SHA-256：
+
+```text
+f761c0272e03cd5e43575fd1161441fd82578c222e466bcb4b2372051280f6ed
+```
+
+v4 arm64 `.so` SHA-256：
+
+```text
+2ed0f9cd8c346906c4a6652aff3d87d8e26020ba6ad1c71c4edd7cbfa5160996
+```
+
+### 修法
+
+因目前工作環境沒有 Android NDK r27d，v4 採可驗證的最小 binary patch：
+
+- upstream / v3 arm64 `.so` 在 `zygisk_companion_entry + 0x258`、ELF file offset / VA `0x11fc` 的 `bl free@plt`
+- 原始 4 bytes：`0d 01 00 94`
+- 改成 AArch64 `nop`：`1f 20 03 d5`
+
+反組譯驗證：
+
+```text
+11ec: str x8, [x19]      ; src
+11f4: add x22, x9, #0x2 ; dst
+11f8: str x22, [x20]
+11fc: nop                ; v3 這裡是 free(procs_map)
+1200: ldr x5, [x19]
+...
+1224: __android_log_print
+```
+
+這樣 `src` / `dst` 在後續 `fork()` 與 `injectMount()` 時仍指向有效 buffer。
+
+副作用是每次「命中 LINE target」會保留約一個 `procs_map` 大小的 heap allocation（目前 map 163 bytes，另加 allocator overhead），companion lifetime 內不釋放。就 LINE process recreation 頻率而言屬可接受的小量 leak；非 LINE process 的 miss / error path free 行為維持原樣。
+
+### 離線驗證
+
+- ZIP `unzip -t`：通過。
+- v3 → v4 除 `module.prop` 外，只有 `zygisk/arm64-v8a.so` 改變。
+- arm64 `.so` 精確只有 offset `0x11fc..0x11ff` 四個 byte 不同。
+- patched site 反組譯為單一 `nop`。
+- `customize.sh` / `service.sh` / `util.sh` / `procs_map` 產生邏輯均未更動。
+
+## v4 A/B 驗證規則
+
+一次成功不再視為 persistence 已解。
+
+上機後先確認一次：
+
+```text
+MASTER       = 683853...
+RVHC         = 683853...
+LINE PROCESS = 683853...
+LINE mountinfo = RVHC -> current base.apk bind mount
+```
+
+之後至少跨多次自然 LINE process recreation / 一段日用時間，再重查 process hash；廣告與 VOOM 不應再因 process 重建一起回來。
 
 ## 判讀規則
 
