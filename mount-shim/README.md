@@ -169,16 +169,19 @@ v4 arm64 `.so` SHA-256：
 
 一次成功不再視為 persistence 已解。
 
-上機後先確認一次：
+### 2026-08-20 first-spawn checkpoint
+
+覆蓋安裝 v4 並重開機後，第一次 LINE process spawn 已實測成功：
 
 ```text
 MASTER       = 683853...
 RVHC         = 683853...
 LINE PROCESS = 683853...
 LINE mountinfo = RVHC -> current base.apk bind mount
+UI = 無 VOOM、無廣告
 ```
 
-之後至少跨多次自然 LINE process recreation / 一段日用時間，再重查 process hash；廣告與 VOOM 不應再因 process 重建一起回來。
+這只證明 v4 的第一個 spawn 正常，尚未證明 persistence。後續要跨多次 LINE process recreation / 一段日用時間，再重查 process hash；廣告與 VOOM 不應再因 process 重建一起回來。
 
 ## 判讀規則
 
