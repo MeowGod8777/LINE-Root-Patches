@@ -28,8 +28,8 @@ Zygisk = Zygisk Next
 | XML Guard | 🟡 暫停 | runtime 曾有證據；Andrew 驗證期 disabled，避免 confounder |
 | LINE Pay merchant checkout | ✅ redirect 可工作 | `pay/payment/<reserveId>` → standalone `com.linepaytw.upay` 已實測 |
 | LINE Pay App Link | ✅ 正常 | `web-tw-pay.line.me: verified`，direct ACTION_VIEW 可拉起 standalone App |
-| Wallet → LINE Pay 首頁 | 🧪 研究中 | 需求是直接開 standalone App；目前 Andrew merchant redirect 不涵蓋此日常入口 |
-| 聊天室好友轉帳 | 🧪 研究中 | Standalone app 有 send-money 功能，但目前看到 `epiTransferSendMoney` 是 server-config link，尚未找到公開固定 deep link |
+| Wallet → LINE Pay 首頁 | ⏸️ 延後 | convenience routing；非付款 blocker，先不為此增加 build / 上機輪次 |
+| 聊天室好友轉帳 | ⏸️ 延後 | Standalone 有 send-money 功能，但 route 為 server-config `epiTransferSendMoney`；recipient 傳遞尚未定案 |
 | 社群 | 🟢 需保留日用驗證 | `Hide community button` 明確 excluded |
 | Wallet UI | 🟢 保留 | `Hide Wallet tab` 明確 excluded |
 | 聊天室 Transfer UI | 🟢 保留 | `Hide Transfer button` 明確 excluded |
@@ -46,19 +46,20 @@ LINE、Andrew patch bundle、config、mount shim 任一邊更新，至少測：
 4. VOOM。
 5. process namespace hash 是否仍是預期 patched payload。
 6. LINE Pay merchant checkout。
-7. Wallet → standalone LINE Pay。
-8. 聊天室好友轉帳。
-9. 社群。
-10. 行事曆／附加功能。
-11. 外部連結。
-12. 背景通知。
-13. XML Guard 是否仍需要／仍有效。
+7. 社群。
+8. 行事曆／附加功能。
+9. 外部連結。
+10. 背景通知。
+11. XML Guard 是否仍需要／仍有效。
+
+Wallet → standalone LINE Pay 與聊天室好友轉帳目前屬 optional/deferred convenience routing，不列為每次最低回歸 blocker；若之後重新啟動該 patch 線再納入測試矩陣。
 
 ## 判讀規則
 
 - `patched-apps` upstream 有某個 patch ≠ 本 fork 現在的 build 一定有啟用；以 config / patch source / payload 為準。
 - UI 看起來有改 ≠ patched APK 一定進 LINE process；mount 以 `/proc/<pid>/root/.../base.apk` hash + mountinfo 為準。
 - merchant checkout redirect 成功 ≠ Wallet / P2P transfer 已完整可用。
+- Wallet / P2P 目前是 deliberate defer，不記成付款功能失敗。
 - ColorOS 沒有「關聯啟動」UI ≠ 一定是系統 blocker；以 App Links resolver 與 runtime transition 為準。
 - 舊版本測到的副作用不能自動套到新版本。
 - 這份矩陣只放去識別後結果，不放真實帳號／聊天／private DB／payment reserveId。
