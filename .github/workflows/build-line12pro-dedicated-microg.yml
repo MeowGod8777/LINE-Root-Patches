@@ -1,0 +1,89 @@
+name: Build LINE 12 Pro Dedicated MicroG
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/build-line12pro-dedicated-microg.yml'
+      - 'nonroot-12pro/**'
+
+permissions:
+  contents: read
+  packages: read
+
+jobs:
+  line:
+    name: Patch LINE 26.11.0 for app.line12pro.android.gms
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout config
+        uses: actions/checkout@v6
+
+      - name: Setup Java 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: zulu
+          java-version: '21'
+
+      - name: Checkout Andrew patches
+        run: git clone --depth 1 https://github.com/andrewliang25/morphe-patches.git morphe-patches
+
+      - name: Retarget GmsCore auth namespace
+        run: |
+          set -euo pipefail
+          PATCH='morphe-patches/patches/src/main/kotlin/app/andrewliang/patches/line/gmscoreauth/GmsCoreAuthPatch.kt'
+          test -f "$PATCH"
+          grep -q 'app.revanced' "$PATCH"
+          sed -i 's/app\.revanced/app.line12pro/g' "$PATCH"
+          echo '=== Retargeted constants ==='
+          grep -nE 'MICROG_PACKAGE|MICROG_ACCOUNT_TYPE|MICROG_CHOOSE_ACCOUNT_ACTION|MICROG_AUTH_SERVICE_ACTION|META_SPOOFED_SIGNATURE' "$PATCH"
+          grep -q 'app.line12pro.android.gms' "$PATCH"
+          if grep -q 'app.revanced' "$PATCH"; then
+            echo 'Old ReVanced namespace still present in GmsCoreAuthPatch.kt'
+            exit 1
+          fi
+
+      - name: Build custom Andrew patch bundle
+        working-directory: morphe-patches
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          ./gradlew --no-daemon clean :patches:buildAndroid
+          MPP=$(find patches/build/libs -maxdepth 1 -type f -name '*.mpp' ! -name '*sources*' ! -name '*javadoc*' | head -1)
+          test -n "$MPP"
+          cp "$MPP" "$GITHUB_WORKSPACE/line12pro-custom.mpp"
+          ls -lh "$GITHUB_WORKSPACE/line12pro-custom.mpp"
+
+      - name: Checkout Andrew builder
+        run: git clone --depth 1 https://github.com/andrewliang25/patched-apps.git builder
+
+      - name: Seed custom patch bundle and config
+        run: |
+          set -euo pipefail
+          cp nonroot-12pro/config.toml builder/config-12pro.toml
+          mkdir -p builder/temp/andrewliang25-rv
+          cp line12pro-custom.mpp builder/temp/andrewliang25-rv/morphe-patches-12pro.mpp
+          ls -lh builder/temp/andrewliang25-rv/
+
+      - name: Build patched LINE
+        working-directory: builder
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          NEXT_VER_CODE: ${{ github.run_number }}
+        run: ./build.sh config-12pro.toml
+
+      - name: Show outputs
+        if: always()
+        run: |
+          find builder/build -maxdepth 1 -type f -printf '%f\n' 2>/dev/null || true
+          test -d builder/build && ls -lh builder/build || true
+
+      - name: Upload patched LINE APK
+        uses: actions/upload-artifact@v7
+        with:
+          name: LINE-26.11.0-12Pro-dedicated-MicroG
+          archive: false
+          path: builder/build/*.apk
+          if-no-files-found: error
