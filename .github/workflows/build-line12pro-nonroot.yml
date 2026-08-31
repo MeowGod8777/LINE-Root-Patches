@@ -1,0 +1,54 @@
+name: Build LINE 12 Pro Non-Root
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/build-line12pro-nonroot.yml'
+      - 'nonroot-12pro/config.toml'
+
+permissions:
+  contents: read
+  packages: read
+
+jobs:
+  line:
+    name: Patch LINE 26.11.0 with upstream Andrew patches
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout config
+        uses: actions/checkout@v6
+
+      - name: Setup Java 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: zulu
+          java-version: '21'
+
+      - name: Checkout Andrew builder
+        run: git clone --depth 1 https://github.com/andrewliang25/patched-apps.git builder
+
+      - name: Install 12 Pro config
+        run: cp nonroot-12pro/config.toml builder/config-12pro.toml
+
+      - name: Build patched LINE
+        working-directory: builder
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          NEXT_VER_CODE: ${{ github.run_number }}
+        run: ./build.sh config-12pro.toml
+
+      - name: Show outputs
+        if: always()
+        run: |
+          find builder/build -maxdepth 1 -type f -printf '%f\n' 2>/dev/null || true
+          test -d builder/build && ls -lh builder/build || true
+
+      - name: Upload patched LINE APK
+        uses: actions/upload-artifact@v7
+        with:
+          name: LINE-26.11.0-12Pro-nonroot
+          archive: false
+          path: builder/build/*.apk
+          if-no-files-found: error
