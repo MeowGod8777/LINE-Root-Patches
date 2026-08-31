@@ -1,6 +1,48 @@
 # LINE 日用相容性矩陣
 
-這份只看「目前這套 LINE + Andrew 模塊 + Root runtime 相容性處理，實際日用怎樣」。
+這份分開記錄 iQOO 12 Pro non-root APK 路線與 Note 12 Turbo Root module 路線，避免把兩種安裝／runtime 條件混在一起。
+
+## iQOO 12 Pro non-root — 2026-08-31 結案
+
+基線：
+
+```text
+Device = iQOO 12 Pro / V2329A
+OS = OriginOS / Android 16
+Root = none
+LINE = 26.11.0
+arch = arm64-v8a
+build-mode = apk
+patches = Andrew morphe-patches
+GmsCore = Morphe MicroG-RE 6.1.4
+GmsCore package = app.revanced.android.gms
+GmsCore account type = app.revanced
+```
+
+| 項目 | 狀態 | 備註 |
+|---|---|---|
+| LINE 啟動／聊天 | 🟢 | patched APK 正常登入與日用 |
+| 去廣告 | 🟢 | Andrew `Hide ad views` + `Remove banner ads` |
+| Home modules / content feed | 🟢 | 精簡正常 |
+| VOOM | 🟢 | 停用 + tab 隱藏 |
+| LINE TODAY | 🟢 | tab 隱藏 |
+| Shopping / 逛逛 | 🟢 | tab 隱藏 |
+| Wallet tab | 🟢 | 隱藏 |
+| LINE Pay redirect | 🟢 | 保留 standalone redirect patch |
+| Push notification patch | 🟢 日用基準 | non-root 重簽 APK 使用 `Fix push notifications` |
+| Google 帳號 picker | 🟢 | LINE 備份頁可叫出 `app.revanced.android.gms` picker |
+| Google Drive restore | 🟢 | Note 12 Turbo backup → 12 Pro restore 已完成 |
+| Google Drive account binding | 🟢 | `app.revanced` account 正常 |
+| YouTube ReVanced 共用 MicroG | 🟢 | 同一顆 Morphe MicroG-RE 6.1.4，影片可播放 |
+| 貼圖排序等本機狀態 | 🟡 | 復原後沒有完整保留；不影響聊天記錄，視為小問題 |
+
+**已廢棄：** 第二顆 `app.line12pro.android.gms` / `app.line12pro` dedicated MicroG 架構。最終不需要雙 MicroG；Andrew `gmscoreauth` 直接配 upstream Morphe MicroG-RE 6.1.4 即可。
+
+詳細：[`nonroot-12pro/README.md`](nonroot-12pro/README.md)
+
+---
+
+## Note 12 Turbo Root 路線
 
 目前基線：
 
