@@ -1,0 +1,29 @@
+parallel-jobs = 1
+
+[LINE-12Pro-Andrew]
+app-name = "LINE-12Pro-Andrew"
+patches-source = "andrewliang25/morphe-patches"
+cli-source = "MorpheApp/morphe-cli"
+rv-brand = "Andrew"
+build-mode = "apk"
+version = "26.11.0"
+arch = "arm64-v8a"
+include-stock = "auto"
+exclusive-patches = true
+included-patches = """\
+  'Hide ad views' \
+  'Remove banner ads' \
+  'Disable VOOM' \
+  'Hide VOOM tab' \
+  'Hide Home modules' \
+  'Hide Home content feed' \
+  'Hide LINE TODAY tab' \
+  'Hide Shopping tab' \
+  'Hide Wallet tab' \
+  'Redirect LINE Pay' \
+  'Fix push notifications' \
+  'Fix chat backup sign-in via GmsCore' \
+  """
+archive-dlurl = "https://archive.org/download/andrews-apks/apks/jp.naver.line.android"
+apkmirror-dlurl = "https://www.apkmirror.com/apk/line-corporation/line"
+uptodown-dlurl = "https://line.en.uptodown.com/android"
