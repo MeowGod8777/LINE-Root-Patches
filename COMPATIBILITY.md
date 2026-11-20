@@ -158,3 +158,17 @@ Detailed record:
 - `y700/2026-11-20-codepath-recovery.md`
 
 This checkpoint is separate from the older Note 12 Turbo namespace regression. Do not reuse the Note 12 stock hash or consumer-namespace conclusions as if they were the Y700 baseline.
+
+
+### Y700 2026-11-20 recovery verification closeout
+
+The Y700 LINE 26.11.0 codePath recovery was subsequently validated across a controlled normal reboot:
+
+```text
+BOOT_ID=1fc770fe-4cc7-40e3-89c9-c8f8fc485683
+appId=10353
+CE inode=53745
+DE inode=53742
+```
+
+LINE opened normally and its private data remained intact. This recovery path is therefore **post-reboot verified**.
