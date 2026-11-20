@@ -170,3 +170,26 @@ This indicates the LINE event was part of a broader device/package-code incident
 System-level record:
 
 `MeowGod8777/Lenovo-Y700-4th-ColorOS16/diagnostics/wfd/2026-11-20-hwc-vds-runtime-restart-incident.md`
+
+
+## Controlled reboot verification
+
+After the full Y700 recovery was complete, a normal reboot was performed.
+
+Post-boot audit:
+
+```text
+BOOT_ID=1fc770fe-4cc7-40e3-89c9-c8f8fc485683
+
+LINE
+appId=10353
+CE inode=53745
+DE inode=53742
+installed=true
+```
+
+The user confirmed LINE opened normally and data remained intact after reboot.
+
+Status: **RECOVERY COMPLETE / POST-REBOOT VERIFIED**.
+
+Temporary rescue copies were removed only after this verification. The active Andrew payload/module state was retained.
