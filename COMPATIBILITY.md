@@ -128,3 +128,33 @@ Wallet → standalone LINE Pay 與聊天室好友轉帳目前屬 optional/deferr
 - 這份矩陣只放去識別後結果，不放真實帳號／聊天／private DB／payment reserveId。
 
 > **附註：** 內容由 AI 按指定格式上傳整理，有錯、缺漏或其他問題請直接私訊。
+
+---
+
+## Lenovo Y700 4th / ColorOS 16 Root route — 2026-11-20 recovery checkpoint
+
+Baseline at incident/recovery time:
+
+```text
+Device = Lenovo Legion Y700 4th / OPD2413
+OS = ColorOS 16 port / Android 16
+Root = KernelSU
+Zygisk = Zygisk Next
+LINE = 26.11.0 (261100124)
+module = line-andrew-arm64
+patched payload SHA256 = 8e65e24b06827d533309acea681e3f06b867e9cf8e84363fbf8444904bedd19a
+```
+
+A system-level restart/reboot incident removed LINE's physical stock `/data/app` code path while preserving PackageSetting, signer lineage, UID 10353, CE/DE inodes and ≈153M private data.
+
+The package was recovered **without uninstall** by extracting the exact Release 8 stock split set and using a replace-only PackageInstaller session. After commit, appId/inodes/data remained unchanged and the Andrew payload was re-bound successfully.
+
+This is now the required Y700 rescue pattern for `pkg=null / codePath missing / data survives` incidents.
+
+Do not use a module reflash as first-line rescue because installer fallback behavior may uninstall on errors.
+
+Detailed record:
+
+- `y700/2026-11-20-codepath-recovery.md`
+
+This checkpoint is separate from the older Note 12 Turbo namespace regression. Do not reuse the Note 12 stock hash or consumer-namespace conclusions as if they were the Y700 baseline.
