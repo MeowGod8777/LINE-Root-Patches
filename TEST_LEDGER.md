@@ -12,3 +12,11 @@
 | FUNCTION-MATRIX | 26.11.0 patched payload | 首頁/廣告/Home/VOOM/Pay/社群/行事曆/外鏈/收回/通知 | 部分已日用驗證，Pay Wallet/transfer 仍待補 | 每次 LINE 更新只重測受影響矩陣，不整套無目的重跑 | ACTIVE MATRIX |
 
 Consumer namespace hash 是 mount 成功的必要證據；root/master hash 不能替代。
+
+
+## Y700 recovery — 2026-11-20
+
+| ID | Baseline | 唯一變數 | 結果 | 結論 | 狀態 |
+|---|---|---|---|---|---|
+| Y700-LINE-CODEPATH-LOSS-20261120 | Y700 ColorOS 16 / LINE 26.11.0 / PackageSetting+UID+data survive / physical `/data/app` path missing | preservation-only stock package reconstruction | Release 8 stock splits installed via replace-only PackageInstaller; commit Success; appId 10353, CE/DE inode and ≈153M data unchanged | package-code loss can be recovered without uninstall/data loss when PackageSetting/signing state survives | COMPLETE |
+| Y700-LINE-ANDREW-REMOUNT-20261120 | recovered stock LINE / existing `line-andrew-arm64` module / payload `8e65e24b...` | module Action re-bind only | `Enabled successfully`; base view became payload hash; package identity/data unchanged | current Y700 Andrew payload can be restored after safe stock reconstruction | COMPLETE |
